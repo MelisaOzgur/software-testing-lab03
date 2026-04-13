@@ -1,0 +1,195 @@
+# ═══════════════════════════════════════════════════════════════════
+#  PBT Lab – GitLab CI Auto-Grader
+#  Software Testing | Mugla Sitki Kocman University
+# ═══════════════════════════════════════════════════════════════════
+#
+#  This pipeline runs automatically on every push.
+#  Students can see the results in:
+#    GitLab → their project → CI/CD → Pipelines
+#
+#  Each task runs as a separate job so students can see
+#  exactly which task passed and which failed.
+# ═══════════════════════════════════════════════════════════════════
+
+image: maven:3.9-eclipse-temurin-17   # Java 17 + Maven, official image
+
+# Cache Maven dependencies between runs → much faster after first run
+cache:
+  key: "${CI_PROJECT_PATH}-maven"
+  paths:
+    - .m2/repository
+
+variables:
+  MAVEN_OPTS: >-
+    -Dmaven.repo.local=.m2/repository
+    -Dmaven.test.failure.ignore=true
+  # -Dmaven.test.failure.ignore=true lets all jobs finish
+  # even when tests fail, so students see ALL results at once.
+
+# ── Stages ──────────────────────────────────────────────────────────
+stages:
+  - build
+  - task1
+  - task2
+  - task3
+  - task4
+  - task5
+  - report
+
+# ── 1. BUILD ────────────────────────────────────────────────────────
+compile:
+  stage: build
+  script:
+    - echo "=== Compiling project ==="
+    - mvn compile test-compile $MAVEN_OPTS --batch-mode -q
+  artifacts:
+    paths:
+      - target/
+    expire_in: 1 hour
+
+# ── 2. TASK 1 ───────────────────────────────────────────────────────
+task1_warmup:
+  stage: task1
+  needs: [compile]
+  script:
+    - echo "=== Task 1 – Warmup: Read and Understand Properties ==="
+    - mvn test $MAVEN_OPTS --batch-mode -Dtest=Task1_WarmupTest
+    - echo "Task 1 complete."
+  artifacts:
+    when: always
+    reports:
+      junit: target/surefire-reports/TEST-lab.Task1_WarmupTest.xml
+    paths:
+      - target/surefire-reports/TEST-lab.Task1_WarmupTest.xml
+    expire_in: 1 week
+  allow_failure: false
+
+# ── 3. TASK 2 ───────────────────────────────────────────────────────
+task2_count_occurrences:
+  stage: task2
+  needs: [compile]
+  script:
+    - echo "=== Task 2 – countOccurrences() Properties ==="
+    - mvn test $MAVEN_OPTS --batch-mode -Dtest=Task2_CountOccurrencesTest
+    - echo "Task 2 complete."
+  artifacts:
+    when: always
+    reports:
+      junit: target/surefire-reports/TEST-lab.Task2_CountOccurrencesTest.xml
+    paths:
+      - target/surefire-reports/TEST-lab.Task2_CountOccurrencesTest.xml
+    expire_in: 1 week
+  allow_failure: false
+
+# ── 4. TASK 3 ───────────────────────────────────────────────────────
+task3_bounded_stack:
+  stage: task3
+  needs: [compile]
+  script:
+    - echo "=== Task 3 – BoundedStack Properties ==="
+    - mvn test $MAVEN_OPTS --batch-mode -Dtest=Task3_BoundedStackTest
+    - echo "Task 3 complete."
+  artifacts:
+    when: always
+    reports:
+      junit: target/surefire-reports/TEST-lab.Task3_BoundedStackTest.xml
+    paths:
+      - target/surefire-reports/TEST-lab.Task3_BoundedStackTest.xml
+    expire_in: 1 week
+  allow_failure: false
+
+# ── 5. TASK 4 ───────────────────────────────────────────────────────
+# Task 4 tests are EXPECTED to fail against BuggyCalculator.
+# allow_failure: true so the pipeline stays green even when bugs are found.
+# The report job below counts how many bugs were detected.
+task4_bug_detection:
+  stage: task4
+  needs: [compile]
+  script:
+    - echo "=== Task 4 – Bug Detection in BuggyCalculator ==="
+    - mvn test $MAVEN_OPTS --batch-mode -Dtest=Task4_BuggyCalculatorTest || true
+    - |
+      FOUND=$(grep -c "PropertyFailureException\|AssertionError\|counterexample" \
+              target/surefire-reports/TEST-lab.Task4_BuggyCalculatorTest.xml 2>/dev/null || echo 0)
+      echo "--------------------------------------------"
+      echo "  Bugs detected by your properties: $FOUND"
+      if [ "$FOUND" -ge 3 ]; then
+        echo "  EXCELLENT – all 3 bugs found!"
+      elif [ "$FOUND" -ge 2 ]; then
+        echo "  GOOD – 2 bugs found. Can you find the third?"
+      elif [ "$FOUND" -ge 1 ]; then
+        echo "  PARTIAL – 1 bug found. Keep going!"
+      else
+        echo "  NONE – no bugs detected yet. Review your properties."
+      fi
+      echo "--------------------------------------------"
+  artifacts:
+    when: always
+    reports:
+      junit: target/surefire-reports/TEST-lab.Task4_BuggyCalculatorTest.xml
+    paths:
+      - target/surefire-reports/TEST-lab.Task4_BuggyCalculatorTest.xml
+    expire_in: 1 week
+  allow_failure: true   # failing here means bugs were found — that's GOOD
+
+# ── 6. TASK 5 ───────────────────────────────────────────────────────
+task5_free_task:
+  stage: task5
+  needs: [compile]
+  script:
+    - echo "=== Task 5 – Free Design Task ==="
+    - |
+      PROPS=$(grep -c "@Property" src/test/java/lab/Task5_FreeTaskTest.java || echo 0)
+      echo "  @Property methods found in Task5: $PROPS"
+      if [ "$PROPS" -lt 3 ]; then
+        echo "  WARNING: fewer than 3 properties found. Add more!"
+      fi
+    - mvn test $MAVEN_OPTS --batch-mode -Dtest=Task5_FreeTaskTest
+    - echo "Task 5 complete."
+  artifacts:
+    when: always
+    reports:
+      junit: target/surefire-reports/TEST-lab.Task5_FreeTaskTest.xml
+    paths:
+      - target/surefire-reports/TEST-lab.Task5_FreeTaskTest.xml
+    expire_in: 1 week
+  allow_failure: false
+
+# ── 7. FINAL REPORT ─────────────────────────────────────────────────
+final_report:
+  stage: report
+  needs:
+    - task1_warmup
+    - task2_count_occurrences
+    - task3_bounded_stack
+    - task4_bug_detection
+    - task5_free_task
+  when: always   # run even if some tasks failed
+  script:
+    - echo "╔══════════════════════════════════════════╗"
+    - echo "║       PBT LAB – FINAL SUMMARY            ║"
+    - echo "╠══════════════════════════════════════════╣"
+    - |
+      check_task() {
+        TASK=$1
+        FILE=$2
+        if [ -f "$FILE" ]; then
+          FAILURES=$(grep -c 'failure\|error' "$FILE" 2>/dev/null || echo 0)
+          if [ "$FAILURES" -eq 0 ]; then
+            echo "║  Task $TASK  ✅  PASS                        ║"
+          else
+            echo "║  Task $TASK  ❌  FAIL ($FAILURES issue(s))           ║"
+          fi
+        else
+          echo "║  Task $TASK  ⚪  NOT RUN                     ║"
+        fi
+      }
+    - check_task 1 "target/surefire-reports/TEST-lab.Task1_WarmupTest.xml"
+    - check_task 2 "target/surefire-reports/TEST-lab.Task2_CountOccurrencesTest.xml"
+    - check_task 3 "target/surefire-reports/TEST-lab.Task3_BoundedStackTest.xml"
+    - check_task 4 "target/surefire-reports/TEST-lab.Task4_BuggyCalculatorTest.xml"
+    - check_task 5 "target/surefire-reports/TEST-lab.Task5_FreeTaskTest.xml"
+    - echo "╚══════════════════════════════════════════╝"
+    - echo ""
+    - echo "Full test reports are in the Artifacts section of each job."
+  allow_failure: true
