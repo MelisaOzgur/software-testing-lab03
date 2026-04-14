@@ -33,7 +33,7 @@ public class Task2_CountOccurrencesTest {
 
         // TODO: call countOccurrences and assert the result is >= 0
         // (one line is enough)
-
+        assertThat(StringUtils.countOccurrences(text, sub)).isGreaterThanOrEqualTo(0);
     }
 
     // ── PROPERTY 2: zero occurrences when character sets are disjoint ─
@@ -45,9 +45,14 @@ public class Task2_CountOccurrencesTest {
     void zeroOccurrencesWithDisjointCharSets(
             // TODO: declare the 'text' parameter with appropriate @ForAll constraints
             // TODO: declare the 'sub' parameter with appropriate @ForAll constraints
+            @ForAll @StringLength(min = 0, max = 200)
+            @CharRange(from = 'a', to = 'm') String text,
+            @ForAll @StringLength(min = 1, max = 20)
+            @CharRange(from = 'n', to = 'z') String sub
     ) {
 
         // TODO: assert that countOccurrences returns 0
+        assertThat(StringUtils.countOccurrences(text, sub)).isEqualTo(0);
 
     }
 
@@ -63,7 +68,8 @@ public class Task2_CountOccurrencesTest {
             @ForAll @IntRange(min = 1, max = 50) int n) {
 
         // TODO: build 'text' and assert the correct count
-
+        String text = sub.repeat(n);
+        assertThat(StringUtils.countOccurrences(text, sub)).isEqualTo(n);
     }
 
     // ── PROPERTY 4: adding a non-matching prefix/suffix doesn't change count
@@ -82,7 +88,9 @@ public class Task2_CountOccurrencesTest {
 
         // TODO: compute baseline count, then count with wrapper added
         //       before and after text, then assert they are equal
-
+        int baseline = StringUtils.countOccurrences(text, sub);
+        int wrapped = StringUtils.countOccurrences(wrapper + text + wrapper, sub);
+        assertThat(wrapped).isEqualTo(baseline);
     }
 
     // ── PROPERTY 5: invalid arguments throw IllegalArgumentException ──
@@ -101,6 +109,7 @@ public class Task2_CountOccurrencesTest {
         Assume.that(text == null || sub == null || (sub != null && sub.isEmpty()));
 
         // TODO: assert that calling countOccurrences throws IllegalArgumentException
-
+        assertThatThrownBy(() -> StringUtils.countOccurrences(text, sub))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
