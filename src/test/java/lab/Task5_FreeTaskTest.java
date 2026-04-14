@@ -1,8 +1,8 @@
 package lab;
 
 import net.jqwik.api.*;
-import net.jqwik.api.constraints.*;
 import static org.assertj.core.api.Assertions.*;
+import net.jqwik.api.Combinators;
 
 /**
  * ═══════════════════════════════════════════════════════════════════
@@ -30,38 +30,73 @@ import static org.assertj.core.api.Assertions.*;
  *
  * ────────────────────────────────────────────────────────────────────
  *  CHOSEN OPTION:
- *  (Write A, B, C, or D here)
+ *  C
  *
  *  REASON FOR CHOICE:
- *
+ * I chose fizzBuzz because the rules are simple and split into clear cases.
  *
  *  PROPERTIES IDENTIFIED:
- *  1.
- *  2.
- *  3.
- *  (add more if you found them)
+ *  1. If n is divisible by both 3 and 5, the result is "FizzBuzz".
+ *  2. If n is divisible by 3 but not 5, the result is "Fizz".
+ *  3. If n is divisible by 5 but not 3, the result is "Buzz".
+ *  4. If n is divisible by neither 3 nor 5, the result is String.valueOf(n).
  *
  * ────────────────────────────────────────────────────────────────────
  */
 public class Task5_FreeTaskTest {
 
+    @Provide
+    Arbitrary<Integer> multiplesOf15() {
+        return Arbitraries.integers()
+                .between(-10_000, 10_000)
+                .map(k -> k * 15);
+    }
+
+    @Provide
+    Arbitrary<Integer> multiplesOf3Not5() {
+        return Combinators.combine(
+                Arbitraries.integers().between(-10_000, 10_000),
+                Arbitraries.of(3, 6, 9, 12)
+        ).as((k, r) -> k * 15 + r);
+    }
+
+    @Provide
+    Arbitrary<Integer> multiplesOf5Not3() {
+        return Combinators.combine(
+                Arbitraries.integers().between(-10_000, 10_000),
+                Arbitraries.of(5, 10)
+        ).as((k, r) -> k * 15 + r);
+    }
+
+    @Provide
+    Arbitrary<Integer> neither3Nor5() {
+        return Combinators.combine(
+                Arbitraries.integers().between(-10_000, 10_000),
+                Arbitraries.of(1, 2, 4, 7, 8, 11, 13, 14)
+        ).as((k, r) -> k * 15 + r);
+    }
+
     // ── PROPERTY 1 ───────────────────────────────────────────────────
     @Property
-    void property1(/* TODO */) {
-        // TODO
+    void property1(@ForAll("multiplesOf15") int n) {
+        assertThat(FreeTask.fizzBuzz(n)).isEqualTo("FizzBuzz");
     }
 
     // ── PROPERTY 2 ───────────────────────────────────────────────────
     @Property
-    void property2(/* TODO */) {
-        // TODO
+    void property2(@ForAll("multiplesOf3Not5") int n) {
+        assertThat(FreeTask.fizzBuzz(n)).isEqualTo("Fizz");
     }
 
     // ── PROPERTY 3 ───────────────────────────────────────────────────
     @Property
-    void property3(/* TODO */) {
-        // TODO
+    void property3(@ForAll("multiplesOf5Not3") int n) {
+        assertThat(FreeTask.fizzBuzz(n)).isEqualTo("Buzz");
     }
 
     // Add more @Property methods if you identified additional properties.
+    @Property
+    void property4(@ForAll("neither3Nor5") int n) {
+        assertThat(FreeTask.fizzBuzz(n)).isEqualTo(String.valueOf(n));
+    }
 }
