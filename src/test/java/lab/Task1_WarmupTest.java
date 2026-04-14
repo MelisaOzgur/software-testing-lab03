@@ -28,15 +28,18 @@ public class Task1_WarmupTest {
      * Write your answer here (1–2 sentences):
      *
      * YOUR ANSWER:
-     *
-     *
+     * It checks that countOccurrences is 0 when text and sub come from
+     * different character sets, so sub cannot appear inside text.
+     * 
      * QUESTION B: Why do we use two separate @CharRange annotations
      *             (one for 'text', another for 'sub')?
      * Write your answer here:
      *
      * YOUR ANSWER:
-     *
+     * We use separate ranges to keep the generated characters disjoint.
+     * That guarantees there cannot be any match.
      */
+    @Report(Reporting.GENERATED)
     @Property
     void zeroOccurrencesWhenCharsDontOverlap(
             @ForAll @StringLength(min = 0, max = 100)
@@ -55,14 +58,15 @@ public class Task1_WarmupTest {
      * Write your answer here:
      *
      * YOUR ANSWER:
-     *
+     * Because text is built as sub repeated n times, we already know
+     * the expected count must be exactly n.
      *
      * QUESTION D: What is the name of the general PBT pattern used here?
      *             (Hint: it was covered in the lecture.)
      * Write your answer here:
      *
      * YOUR ANSWER:
-     *
+     * By-construction generation.
      */
     @Property
     void exactCountByConstruction(
@@ -81,14 +85,15 @@ public class Task1_WarmupTest {
      * QUESTION E: What invariant does this property verify?
      *
      * YOUR ANSWER:
-     *
+     * It verifies that reversing a string twice gives the original string back.
      *
      * QUESTION F: Could this property ever produce a false failure
      *             (i.e., fail even though the implementation is correct)?
      *             Explain why or why not.
      *
      * YOUR ANSWER:
-     *
+     * No. This is a true rule for every string, so a correct reverse
+     * method should always satisfy it.
      */
     @Property
     void reverseOfReversedIsOriginal(
@@ -105,8 +110,9 @@ public class Task1_WarmupTest {
      *             above, re-run the tests, and paste two lines of output here.
      *
      * YOUR ANSWER:
-     * Line 1:
-     * Line 2:
+     * It prints the generated input values jqwik tries for that property.
+     * Line 1: arg1: "z"
+     * Line 2: timestamp = 2026-04-14T21:12:30.688707, generated =
      *
      */
     @Property(tries = 500)
