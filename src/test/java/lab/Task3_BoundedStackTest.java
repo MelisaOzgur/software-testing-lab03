@@ -38,12 +38,19 @@ public class Task3_BoundedStackTest {
         BoundedStack<Integer> stack = new BoundedStack<>(items.size());
 
         // TODO step 1: push all items onto the stack
+        items.forEach(stack::push);
 
         // TODO step 2: pop all items into a new list
+         List<Integer> popped = new ArrayList<>();
+        for (int i = 0; i < items.size(); i++) {
+            popped.add(stack.pop());
+        }
 
         // TODO step 3: assert that the popped list equals the REVERSE of items
         //              Hint: Collections.reverse() or new ArrayList<>(items) + reverse
-
+        List<Integer> reversed = new ArrayList<>(items);
+        Collections.reverse(reversed);
+        assertThat(popped).isEqualTo(reversed);
     }
 
     // ── PROPERTY 2: size tracking ────────────────────────────────────
@@ -59,10 +66,13 @@ public class Task3_BoundedStackTest {
 
         for (int i = 0; i < n; i++) {
             // TODO: assert size before push, then push, then assert size after push
+            assertThat(stack.size()).isEqualTo(i);
+            stack.push(i);
+            assertThat(stack.size()).isEqualTo(i + 1);
         }
 
         // TODO: final assertion — stack must be full
-
+        assertThat(stack.isFull()).isTrue();
     }
 
     // ── PROPERTY 3: push-pop round trip ──────────────────────────────
@@ -85,6 +95,10 @@ public class Task3_BoundedStackTest {
         // TODO: push 'extra', then pop, then assert:
         //       1. the popped value equals 'extra'
         //       2. the size returned to sizeBefore
+        stack.push(extra);
+        int popped = stack.pop();
+        assertThat(popped).isEqualTo(extra);
+        assertThat(stack.size()).isEqualTo(sizeBefore);
 
     }
 
@@ -98,11 +112,18 @@ public class Task3_BoundedStackTest {
     //       State what you are testing in the comment below.
     //
     // WHAT THIS PROPERTY TESTS:
-    //
+    // peek() returns the top element without changing the stack size.
     @Property
-    void property4(/* TODO: add parameters */) {
+    void property4(@ForAll @Size(min = 1, max = 50)
+            List<@IntRange(min = -1000, max = 1000) Integer> items) {
 
         // TODO: implement
+        BoundedStack<Integer> stack = new BoundedStack<>(items.size());
+        items.forEach(stack::push);
+
+        int sizeBefore = stack.size();
+        assertThat(stack.peek()).isEqualTo(items.get(items.size() - 1));
+        assertThat(stack.size()).isEqualTo(sizeBefore);
 
     }
 
@@ -113,11 +134,14 @@ public class Task3_BoundedStackTest {
     //       EXCEPTION being thrown (full or empty stack).
     //
     // WHAT THIS PROPERTY TESTS:
-    //
+    // pop() throws NoSuchElementException when called on an empty stack.
     @Property
-    void property5(/* TODO: add parameters */) {
+    void property5(@ForAll @IntRange(min = 1, max = 100) int capacity) {
 
         // TODO: implement
+        BoundedStack<Integer> stack = new BoundedStack<>(capacity);
 
+        assertThatThrownBy(stack::pop)
+                .isInstanceOf(NoSuchElementException.class);
     }
 }
