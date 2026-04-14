@@ -42,17 +42,20 @@ public class Task4_BuggyCalculatorTest {
     // Write at least TWO properties. One of them must catch the bug.
     //
     // BUG FOUND (fill in after jqwik reports a counterexample):
-    //
+    // abs() fails for Integer.MIN_VALUE.
+    // For the counterexample n = -2147483648, the result is still negative.
+    // So abs(n) is not always >= 0.
     @Property
     void absIsNeverNegative(@ForAll int n) {
-        // TODO
+        assertThat(BuggyCalculator.abs(n)).isGreaterThanOrEqualTo(0);
 
     }
 
     @Property
-    void absProperty2(/* TODO: parameters */) {
+    void absProperty2(@ForAll int n) {
         // TODO: write a second property that catches the actual bug
-
+        Assume.that(n < 0 && n != Integer.MIN_VALUE);
+        assertThat(BuggyCalculator.abs(n)).isEqualTo(-n);
     }
 
     // ── max() ────────────────────────────────────────────────────────
@@ -66,19 +69,24 @@ public class Task4_BuggyCalculatorTest {
     // Write at least TWO properties. At least one must catch the bug.
     //
     // BUG FOUND (fill in after jqwik reports a counterexample):
-    //
+    // max() does not always return the larger input.
+    // A failing case shows that it returned 0 even though one input was 1.
+    // So the result can be smaller than one of the arguments.
     @Property
     void maxIsAtLeastBothInputs(
             @ForAll int a,
             @ForAll int b) {
         // TODO
-
+        int result = BuggyCalculator.max(a, b);
+        assertThat(result).isGreaterThanOrEqualTo(a);
+        assertThat(result).isGreaterThanOrEqualTo(b);
     }
 
     @Property
-    void maxProperty2(/* TODO: parameters */) {
+    void maxProperty2(@ForAll int a, @ForAll int b) {
         // TODO
-
+        int result = BuggyCalculator.max(a, b);
+        assertThat(result == a || result == b).isTrue();
     }
 
     // ── isPrime() ────────────────────────────────────────────────────
@@ -92,18 +100,30 @@ public class Task4_BuggyCalculatorTest {
     // Write at least TWO properties. At least one must catch the bug.
     //
     // BUG FOUND (fill in after jqwik reports a counterexample):
-    //
+    // isPrime() incorrectly returns false for 2.
+    // But 2 is a prime number, so the implementation misclassifies this edge case.
     @Property
     void twoIsPrime() {
         // TODO: this one does not need any @ForAll parameter —
         //       just directly assert that isPrime(2) is true.
-
+        assertThat(BuggyCalculator.isPrime(2)).isTrue();
     }
 
     @Property
-    void isPrimeProperty2(/* TODO: parameters */) {
+    void isPrimeProperty2(@ForAll @IntRange(min = 2, max = 200) int n) {
         // TODO
+        Assume.that(BuggyCalculator.isPrime(n));
+        for (int divisor = 2; divisor < n; divisor++) {
+            assertThat(n % divisor).isNotEqualTo(0);
+        }
+    }
 
+    @Property
+    void noEvenNumberGreaterThanTwoIsPrime(
+            @ForAll @IntRange(min = 2, max = 500) int k) {
+
+        int even = 2 * k;
+        assertThat(BuggyCalculator.isPrime(even)).isFalse();
     }
 
     // ── BONUS: clamp() ───────────────────────────────────────────────
@@ -119,7 +139,8 @@ public class Task4_BuggyCalculatorTest {
     // If it does, describe the bug below. If not, state that it is correct.
     //
     // RESULT:
-    //
+    // No bug was detected by this property.
+    // clamp() stayed within the given bounds for the tested inputs.
     @Property
     void clampStaysWithinBounds(
             @ForAll int value,
@@ -129,6 +150,8 @@ public class Task4_BuggyCalculatorTest {
         Assume.that(min <= max);
 
         // TODO
-
+        int result = BuggyCalculator.clamp(value, min, max);
+        assertThat(result).isGreaterThanOrEqualTo(min);
+        assertThat(result).isLessThanOrEqualTo(max);
     }
 }
